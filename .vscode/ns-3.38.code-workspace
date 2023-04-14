@@ -4,5 +4,11 @@
 			"path": ".."
 		}
 	],
-	"settings": {}
+	"settings": {
+		"files.associations": {
+			"filesystem": "cpp"
+		},
+		// "editor.fontFamily": "'Droid Sans Mono', 'monospace', monospace"
+		"editor.fontFamily": "Consolas, 'Courier New', monospace"
+	}
 }
