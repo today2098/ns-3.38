@@ -40,6 +40,9 @@ class NetSim {
     double m_simStop;                    // m_simStop:=(シミュレーション終了時間).
     double m_appStart;                   // m_appStart:=(アプリ開始時間).
 
+    void SendPacket(Ptr<Socket> socket, Ipv4Address dest, uint16_t port, int dataSize);
+    void HandleRead(Ptr<Socket> socket);
+
     void CreateNodes(void);
     void ConfigureL2(void);
     void ConfigureL3(void);
@@ -75,6 +78,33 @@ NetSim::NetSim(int argc, char *argv[]) {
 
 NetSim::~NetSim() {
     NS_LOG_FUNCTION(this);
+}
+
+void NetSim::SendPacket(Ptr<Socket> socket, Ipv4Address dest, uint16_t port, int dataSize) {
+    auto node = socket->GetNode();
+    auto packet = Create<Packet>(dataSize);
+    socket->SendTo(packet, 0, InetSocketAddress(dest, port));
+
+    std::ostringstream oss;
+    oss << "node " << node->GetId() << " sends packet(uid: " << packet->GetUid() << ", size: " << packet->GetSize() << " bytes) "
+        << "from " << dest << ":" << port;
+    NS_LOG_INFO(oss.str());
+}
+
+void NetSim::HandleRead(Ptr<Socket> socket) {
+    auto node = socket->GetNode();
+    Ptr<Packet> packet;
+    Address from;
+    while(packet = socket->RecvFrom(from)) {
+        if(packet->GetSize() > 0) {
+        }
+
+        std::ostringstream oss;
+        auto addr = InetSocketAddress::ConvertFrom(from);
+        oss << "node " << node->GetId() << " receives packet(uid: " << packet->GetUid() << ", size: " << packet->GetSize() << " bytes) "
+            << "from " << addr.GetIpv4() << ":" << addr.GetPort();
+        NS_LOG_INFO(oss.str());
+    }
 }
 
 void NetSim::CreateNodes(void) {
@@ -134,6 +164,19 @@ void NetSim::ConfigureL3(void) {
 
 void NetSim::ConfigureL7(void) {
     NS_LOG_FUNCTION(this);
+
+    uint16_t port = 12345;
+
+    for(int i = 0; i < m_vn; ++i) {
+        auto node = m_nodes.Get(i);
+        auto sockFactory = node->GetObject<UdpSocketFactory>();
+
+        auto &sock = m_sockets[i];
+        sock = sockFactory->CreateSocket();
+        sock->Bind(InetSocketAddress(Ipv4Address::GetAny(), port));
+        sock->SetAllowBroadcast(true);
+        sock->SetRecvCallback(MakeCallback(&NetSim::HandleRead, this));
+    }
 }
 
 void NetSim::Run(void) {
@@ -149,6 +192,8 @@ void NetSim::Run(void) {
     ConfigureL7();
 
     Simulator::Stop(Seconds(m_simStop));
+
+    Simulator::Schedule(Seconds(m_appStart), &NetSim::SendPacket, this, m_sockets[0], "10.1.1.3", 12345, 100);
 
     std::filesystem::create_directories(ANIM_DIR);
     AnimationInterface anim(ANIM_DIR + m_prefix + ".xml");
