@@ -24,7 +24,7 @@ NS_LOG_COMPONENT_DEFINE("Main");
 //
 
 class NetSim {
-    std::string OUTPUT_DIR = "output/simple_aodv/";  // OUTPUT_DIR:=(ログファイルの出力ディレクトリ).
+    std::string OUTPUT_DIR = "output/simple-aodv/";  // OUTPUT_DIR:=(ログファイルの出力ディレクトリ).
     std::string ANIM_DIR = "output/animation/";      // ANIM_DIR:=(netanim用出力ディレクトリ).
 
     bool m_tracing;        // m_tracing:=(トレーシングを有効にする).
@@ -57,7 +57,7 @@ NetSim::NetSim(int argc, char *argv[]) {
 
     m_tracing = false;
     m_verbose = false;
-    m_prefix = "simple_aodv";
+    m_prefix = "simple-aodv";
 
     m_vn = 3;
     m_dist = 40.0;
@@ -77,5 +77,106 @@ NetSim::~NetSim() {
     NS_LOG_FUNCTION(this);
 }
 
+void NetSim::CreateNodes(void) {
+    NS_LOG_FUNCTION(this);
+
+    m_nodes.Create(m_vn);
+
+    MobilityHelper mobility;
+    mobility.SetPositionAllocator("ns3::GridPositionAllocator",
+                                  "GridWidth", UintegerValue(m_vn),
+                                  "MinX", DoubleValue(0),
+                                  "MinY", DoubleValue(0),
+                                  "DeltaX", DoubleValue(m_dist));
+    mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
+    mobility.Install(m_nodes);
+}
+
+void NetSim::ConfigureL2(void) {
+    NS_LOG_FUNCTION(this);
+
+    auto wifiChannel = YansWifiChannelHelper::Default();
+    auto channel = wifiChannel.Create();
+
+    YansWifiPhyHelper wifiPhy;
+    wifiPhy.SetChannel(channel);
+
+    WifiMacHelper wifiMac;
+    auto ssid = Ssid("my-ssid");
+    wifiMac.SetType("ns3::AdhocWifiMac",
+                    "Ssid", SsidValue(ssid));
+
+    WifiHelper wifi;
+    wifi.SetStandard(WIFI_STANDARD_80211a);
+    wifi.SetRemoteStationManager("ns3::ConstantRateWifiManager",
+                                 "DataMode", StringValue("OfdmRate6Mbps"),
+                                 "ControlMode", StringValue("OfdmRate6Mbps"));
+    // wifi.SetRemoteStationManager("ns3::IdealWifiManager");
+    m_devices = wifi.Install(wifiPhy, wifiMac, m_nodes);
+}
+
+void NetSim::ConfigureL3(void) {
+    NS_LOG_FUNCTION(this);
+
+    AodvHelper aodv;
+    // aodv.Set("EnableHello", BooleanValue(false));
+
+    InternetStackHelper internet;
+    internet.SetRoutingHelper(aodv);
+    internet.Install(m_nodes);
+
+    Ipv4AddressHelper ipv4;
+    ipv4.SetBase("10.1.1.0", "255.255.255.0");
+    m_ifs = ipv4.Assign(m_devices);
+
+    Ipv4GlobalRoutingHelper::PopulateRoutingTables();
+}
+
+void NetSim::ConfigureL7(void) {
+    NS_LOG_FUNCTION(this);
+}
+
+void NetSim::Run(void) {
+    NS_LOG_FUNCTION(this);
+
+    Time::SetResolution(Time::NS);
+    Packet::EnablePrinting();
+    Packet::EnableChecking();
+
+    CreateNodes();
+    ConfigureL2();
+    ConfigureL3();
+    ConfigureL7();
+
+    Simulator::Stop(Seconds(m_simStop));
+
+    std::filesystem::create_directories(ANIM_DIR);
+    AnimationInterface anim(ANIM_DIR + m_prefix + ".xml");
+    anim.SetStartTime(Seconds(0.0));
+    anim.SetStopTime(Seconds(30.0));
+
+    if(m_verbose) {
+        std::filesystem::create_directories(OUTPUT_DIR);
+
+        YansWifiPhyHelper wifiPhy;
+        wifiPhy.EnablePcapAll(OUTPUT_DIR + m_prefix);
+
+        AsciiTraceHelper ascii;
+        auto stream = ascii.CreateFileStream(OUTPUT_DIR + m_prefix + "_routing-table.tr");
+        Ipv4StaticRoutingHelper staticRouting;
+        staticRouting.PrintRoutingTableAllEvery(Seconds(1.0), stream);
+    }
+
+    Simulator::Run();
+    Simulator::Destroy();
+}
+
 int main(int argc, char *argv[]) {
+    LogComponentEnable("Main", LOG_LEVEL_LOGIC);
+    LogComponentEnableAll(LOG_PREFIX_ALL);
+
+    NetSim netsim(argc, argv);
+    netsim.Run();
+
+    return 0;
 }
