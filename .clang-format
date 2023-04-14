@@ -1,15 +1,16 @@
 ---
 Language: Cpp
-BasedOnStyle: Microsoft
+# BasedOnStyle: Microsoft
+BasedOnStyle: Google
 
-AllowAllArgumentsOnNextLine: false
-AllowAllParametersOfDeclarationOnNextLine: false
-AlwaysBreakAfterReturnType: TopLevelDefinitions
-AlwaysBreakTemplateDeclarations: Yes
-BinPackArguments: false
-BinPackParameters: false
-ColumnLimit: 100
-DeriveLineEnding: false
+# AllowAllArgumentsOnNextLine: false
+# AllowAllParametersOfDeclarationOnNextLine: false
+# AlwaysBreakAfterReturnType: TopLevelDefinitions
+# AlwaysBreakTemplateDeclarations: Yes
+# BinPackArguments: false
+# BinPackParameters: false
+# ColumnLimit: 100
+# DeriveLineEnding: false
 IncludeBlocks: Regroup
 IncludeCategories:
   - Regex: '^(<|")ns3/'
@@ -21,9 +22,16 @@ IncludeCategories:
   - Regex: ".*"
     Priority: 1
     SortPriority: 0
-KeepEmptyLinesAtTheStartOfBlocks: false
-PackConstructorInitializers: Never
-PointerAlignment: Left
-QualifierAlignment: Left
-SeparateDefinitionBlocks: Always
+# KeepEmptyLinesAtTheStartOfBlocks: false
+# PackConstructorInitializers: Never
+# PointerAlignment: Left
+# QualifierAlignment: Left
+# SeparateDefinitionBlocks: Always
 Standard: "c++17"
+
+AccessModifierOffset: -4
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse
+ColumnLimit: 0
+ForEachMacros: ["REP", "FOR"]
+IndentWidth: 4
+SpaceBeforeParens: Never
