@@ -40,6 +40,10 @@ class NetSim {
     double m_simStop;                    // m_simStop:=(シミュレーション終了時間).
     double m_appStart;                   // m_appStart:=(アプリ開始時間).
 
+    void TracePhyTxBegin(std::string context, Ptr<const Packet> packet, double txPowerW);
+    void TracePhyRxBegin(std::string context, Ptr<const Packet> packet, RxPowerWattPerChannelBand rxPowerW);
+    void TracePacket(std::string context, Ptr<const Packet> packet);
+
     void SendPacket(Ptr<Socket> socket, Ipv4Address dest, uint16_t port, int dataSize);
     void HandleRead(Ptr<Socket> socket);
 
@@ -80,13 +84,29 @@ NetSim::~NetSim() {
     NS_LOG_FUNCTION(this);
 }
 
+void NetSim::TracePhyTxBegin(std::string context, Ptr<const Packet> packet, double txPowerW) {
+    NS_LOG_FUNCTION(this << context << packet << txPowerW);
+
+    std::clog << "------------------------------\n";
+    packet->Print(std::clog);
+    std::clog << "\n------------------------------" << std::endl;
+}
+
+void NetSim::TracePhyRxBegin(std::string context, Ptr<const Packet> packet, RxPowerWattPerChannelBand rxPowerW) {
+    NS_LOG_FUNCTION(this << context << packet);
+}
+
+void NetSim::TracePacket(std::string context, Ptr<const Packet> packet) {
+    NS_LOG_FUNCTION(this << context << packet);
+}
+
 void NetSim::SendPacket(Ptr<Socket> socket, Ipv4Address dest, uint16_t port, int dataSize) {
     auto node = socket->GetNode();
     auto packet = Create<Packet>(dataSize);
     socket->SendTo(packet, 0, InetSocketAddress(dest, port));
 
     std::ostringstream oss;
-    oss << "node " << node->GetId() << " sends packet(uid: " << packet->GetUid() << ", size: " << packet->GetSize() << " bytes) "
+    oss << "node" << node->GetId() << " sends packet(uid: " << packet->GetUid() << ", size: " << packet->GetSize() << " bytes) "
         << "from " << dest << ":" << port;
     NS_LOG_INFO(oss.str());
 }
@@ -101,7 +121,7 @@ void NetSim::HandleRead(Ptr<Socket> socket) {
 
         std::ostringstream oss;
         auto addr = InetSocketAddress::ConvertFrom(from);
-        oss << "node " << node->GetId() << " receives packet(uid: " << packet->GetUid() << ", size: " << packet->GetSize() << " bytes) "
+        oss << "node" << node->GetId() << " receives packet(uid: " << packet->GetUid() << ", size: " << packet->GetSize() << " bytes) "
             << "from " << addr.GetIpv4() << ":" << addr.GetPort();
         NS_LOG_INFO(oss.str());
     }
@@ -132,9 +152,7 @@ void NetSim::ConfigureL2(void) {
     wifiPhy.SetChannel(channel);
 
     WifiMacHelper wifiMac;
-    auto ssid = Ssid("my-ssid");
-    wifiMac.SetType("ns3::AdhocWifiMac",
-                    "Ssid", SsidValue(ssid));
+    wifiMac.SetType("ns3::AdhocWifiMac");
 
     WifiHelper wifi;
     wifi.SetStandard(WIFI_STANDARD_80211a);
@@ -149,7 +167,7 @@ void NetSim::ConfigureL3(void) {
     NS_LOG_FUNCTION(this);
 
     AodvHelper aodv;
-    // aodv.Set("EnableHello", BooleanValue(false));
+    aodv.Set("EnableHello", BooleanValue(false));
 
     InternetStackHelper internet;
     internet.SetRoutingHelper(aodv);
@@ -195,10 +213,17 @@ void NetSim::Run(void) {
 
     Simulator::Schedule(Seconds(m_appStart), &NetSim::SendPacket, this, m_sockets[0], "10.1.1.3", 12345, 100);
 
-    std::filesystem::create_directories(ANIM_DIR);
-    AnimationInterface anim(ANIM_DIR + m_prefix + ".xml");
-    anim.SetStartTime(Seconds(0.0));
-    anim.SetStopTime(Seconds(30.0));
+    if(m_tracing) {
+        Config::Connect("NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyTxBegin", MakeCallback(&NetSim::TracePhyTxBegin, this));
+        Config::Connect("NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyRxBegin", MakeCallback(&NetSim::TracePhyRxBegin, this));
+        Config::Connect("NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyTxEnd", MakeCallback(&NetSim::TracePacket, this));
+        Config::Connect("NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyRxEnd", MakeCallback(&NetSim::TracePacket, this));
+    }
+
+    // std::filesystem::create_directories(ANIM_DIR);
+    // AnimationInterface anim(ANIM_DIR + m_prefix + ".xml");
+    // anim.SetStartTime(Seconds(0.0));
+    // anim.SetStopTime(Seconds(30.0));
 
     if(m_verbose) {
         std::filesystem::create_directories(OUTPUT_DIR);
