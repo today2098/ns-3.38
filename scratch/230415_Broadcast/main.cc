@@ -183,6 +183,7 @@ void NetSim::ConfigureL3(void) {
 
     AodvHelper aodv;
     aodv.Set("EnableHello", BooleanValue(false));
+    // aodv.Set("EnableBroadcast", BooleanValue(false));
 
     InternetStackHelper internet;
     internet.SetRoutingHelper(aodv);
