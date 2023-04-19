@@ -50,7 +50,7 @@ TypeId BoidsMobilityModel::GetTypeId() {
                                           MakeDoubleChecker<double>(0))
                             .AddAttribute("ZoneE",
                                           "Zone of 'Enemy.' [m]",
-                                          DoubleValue(300),
+                                          DoubleValue(100),
                                           MakeDoubleAccessor(&BoidsMobilityModel::m_ze),
                                           MakeDoubleChecker<double>(0))
                             .AddAttribute("WeightS",
@@ -60,7 +60,7 @@ TypeId BoidsMobilityModel::GetTypeId() {
                                           MakeDoubleChecker<double>())
                             .AddAttribute("WeightA",
                                           "Weight of 'Alignment'",
-                                          DoubleValue(0.1),
+                                          DoubleValue(0.2),
                                           MakeDoubleAccessor(&BoidsMobilityModel::m_wa),
                                           MakeDoubleChecker<double>())
                             .AddAttribute("WeightC",
@@ -70,12 +70,12 @@ TypeId BoidsMobilityModel::GetTypeId() {
                                           MakeDoubleChecker<double>())
                             .AddAttribute("WeightE",
                                           "Weight of 'Enemy'",
-                                          DoubleValue(0.3),
+                                          DoubleValue(0.2),
                                           MakeDoubleAccessor(&BoidsMobilityModel::m_we),
                                           MakeDoubleChecker<double>())
                             .AddAttribute("WeightCt",
                                           "Weight of 'Center'",
-                                          DoubleValue(0.2),
+                                          DoubleValue(0.1),
                                           MakeDoubleAccessor(&BoidsMobilityModel::m_wct),
                                           MakeDoubleChecker<double>())
                             .AddAttribute("Alpha",
@@ -110,12 +110,12 @@ TypeId BoidsMobilityModel::GetTypeId() {
                                           MakeDoubleChecker<double>())
                             .AddAttribute("Interval",
                                           "Interval of update.",
-                                          TimeValue(Seconds(0.1)),
+                                          TimeValue(Seconds(0.5)),
                                           MakeTimeAccessor(&BoidsMobilityModel::m_interval),
                                           MakeTimeChecker())
                             .AddAttribute("Eps",
                                           "",
-                                          StringValue("ns3::NormalRandomVariable[Mean=0.0|Variance=0.05]"),
+                                          StringValue("ns3::NormalRandomVariable[Mean=0.0|Variance=0.1]"),
                                           MakePointerAccessor(&BoidsMobilityModel::m_eps),
                                           MakePointerChecker<RandomVariableStream>());
     return tid;
@@ -140,13 +140,11 @@ void BoidsMobilityModel::DoInitializePrivate() {
     NotifyCourseChange();
 
     Simulator::ScheduleNow(&BoidsMobilityModel::UpdateInfo, this);
+    m_event = Simulator::Schedule(Seconds(0.1), &BoidsMobilityModel::Update, this);
 }
 
 void BoidsMobilityModel::UpdateInfo() {
     m_flag = true;
-
-    m_event.Cancel();
-    m_event = Simulator::ScheduleNow(&BoidsMobilityModel::Update, this);
 
     Simulator::Schedule(m_interval, &BoidsMobilityModel::UpdateInfo, this);
 }

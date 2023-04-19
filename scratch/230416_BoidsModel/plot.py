@@ -12,7 +12,7 @@ PREFIX = 'plot'
 N = 31  # ノード数．
 W = 12  # プロット幅．
 INTERVAL = 100  # [msec/frame]
-FRAMES = 50
+FRAMES = 100
 
 data = []
 for i in range(N):

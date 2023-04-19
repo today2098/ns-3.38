@@ -65,7 +65,7 @@ NetSim::NetSim(int argc, char *argv[]) {
     m_enable3D = false;
     m_enableEnemy = false;
     m_simStop = 100.0;
-    m_appStart = 20.0;
+    m_appStart = 50.0;
 
     CommandLine cmd(__FILE__);
     cmd.AddValue("tracing", "Enable tracing, if true", m_tracing);
@@ -145,7 +145,7 @@ void NetSim::CreateNodes(void) {
     mobility.SetPositionAllocator("ns3::GridPositionAllocator",
                                   "MinX", DoubleValue(0),
                                   "MinY", DoubleValue(0),
-                                  "Z", DoubleValue(m_height - 10.0));
+                                  "Z", DoubleValue(m_height - 5.0));
     mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
     mobility.Install(tower);
 
@@ -161,12 +161,12 @@ void NetSim::CreateNodes(void) {
     }
 
     mobility.SetPositionAllocator("ns3::UniformDiscPositionAllocator",
-                                  "rho", DoubleValue(100.0),
+                                  "rho", DoubleValue(200.0),
                                   "Z", DoubleValue(m_height));
     if(m_enable3D) {
         mobility.SetMobilityModel("ns3::BoidsMobilityModel",
                                   "Enable3D", BooleanValue(true),
-                                  "Center", VectorValue(Vector(0.0, 0.0, m_height - 10.0)),
+                                  "Center", VectorValue(Vector(0.0, 0.0, m_height)),
                                   "MinZ", DoubleValue(m_height),
                                   "MaxZ", DoubleValue(m_height + 10.0),
                                   "MaxSpeed", DoubleValue(15.0),
@@ -179,22 +179,19 @@ void NetSim::CreateNodes(void) {
     mobility.Install(boids);
 
     // Enenmy.
-    auto enemy = CreateObject<Node>();
-
-    auto type = CreateObject<BoidsType>();
-    type->SetBoidsType(BoidsType::BoidsTypeEnum::ENEMY);
-    enemy->AggregateObject(type);
-
-    mobility.SetMobilityModel("ns3::WaypointMobilityModel");
-    mobility.Install(enemy);
-
-    auto model = enemy->GetObject<WaypointMobilityModel>();
-
     if(m_enableEnemy) {
-        model->AddWaypoint(Waypoint(Seconds(0.0), Vector(-200.0, 20.0, m_height)));
-        model->AddWaypoint(Waypoint(Seconds(70.0), Vector(500.0, 20.0, m_height)));
-    } else {
-        model->AddWaypoint(Waypoint(Seconds(0.0), Vector(-500.0, 20.0, m_height)));
+        auto enemy = CreateObject<Node>();
+
+        auto type = CreateObject<BoidsType>();
+        type->SetBoidsType(BoidsType::BoidsTypeEnum::ENEMY);
+        enemy->AggregateObject(type);
+
+        mobility.SetMobilityModel("ns3::WaypointMobilityModel");
+        mobility.Install(enemy);
+
+        auto model = enemy->GetObject<WaypointMobilityModel>();
+        model->AddWaypoint(Waypoint(Seconds(0.0), Vector(-10.0 * m_appStart, 20.0, m_height)));
+        model->AddWaypoint(Waypoint(Seconds(m_simStop), Vector(10 * (m_simStop - m_appStart), 20.0, m_height)));
     }
 }
 
@@ -212,10 +209,10 @@ void NetSim::ConfigureL2(void) {
 
     WifiHelper wifi;
     wifi.SetStandard(WIFI_STANDARD_80211a);
-    wifi.SetRemoteStationManager("ns3::ConstantRateWifiManager",
-                                 "DataMode", StringValue("OfdmRate6Mbps"),
-                                 "ControlMode", StringValue("OfdmRate6Mbps"));
-    // wifi.SetRemoteStationManager("ns3::IdealWifiManager");
+    // wifi.SetRemoteStationManager("ns3::ConstantRateWifiManager",
+    //                              "DataMode", StringValue("OfdmRate6Mbps"),
+    //                              "ControlMode", StringValue("OfdmRate6Mbps"));
+    wifi.SetRemoteStationManager("ns3::IdealWifiManager");
     m_devices = wifi.Install(wifiPhy, wifiMac, m_nodes);
 }
 
@@ -273,9 +270,10 @@ void NetSim::Run(void) {
     int cnt = 10;
     Simulator::Schedule(Seconds(m_appStart), &NetSim::SendPacket, this, m_sockets[0], "10.1.1.255", 12345, dataSize, interval, cnt);
 
-    if(m_verbose) {
-        std::filesystem::create_directories(OUTPUT_DIR);
+    std::filesystem::create_directories(OUTPUT_DIR);
+    Simulator::ScheduleNow(&NetSim::TracePosition, this, Seconds(1.0));
 
+    if(m_verbose) {
         YansWifiPhyHelper wifiPhy;
         // wifiPhy.EnablePcapAll(OUTPUT_DIR + m_prefix);
         wifiPhy.EnableAsciiAll(OUTPUT_DIR + m_prefix);
@@ -284,14 +282,10 @@ void NetSim::Run(void) {
         auto stream = ascii.CreateFileStream(OUTPUT_DIR + m_prefix + "_routing-table.tr");
         AodvHelper aodv;
         aodv.PrintRoutingTableAllEvery(Seconds(1.0), stream);
-
-        Simulator::ScheduleNow(&NetSim::TracePosition, this, Seconds(1.0));
     }
 
     std::filesystem::create_directories(ANIM_DIR);
     AnimationInterface anim(ANIM_DIR + m_prefix + ".xml");
-    anim.SetStartTime(Seconds(0.0));
-    anim.SetStopTime(Seconds(m_simStop));
 
     Simulator::Run();
 
