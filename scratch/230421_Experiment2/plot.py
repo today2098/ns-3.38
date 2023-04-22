@@ -7,7 +7,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import pandas as pd
 
 
-OUTPUT_DIR = 'output/experiment1/'
+OUTPUT_DIR = 'output/experiment2/'
 PREFIX = 'plot'
 N = 27  # ノード数．
 W = 12  # プロット幅．
@@ -16,7 +16,7 @@ FRAMES = 100
 
 data = []
 for i in range(N):
-    data.append(pd.read_csv(OUTPUT_DIR + 'experiment1_position_' + str(i) + '.csv'))
+    data.append(pd.read_csv(OUTPUT_DIR + 'experiment2_position_' + str(i) + '.csv'))
 
 
 # 開始time[sec]におけるノードiの座標を取得する．
