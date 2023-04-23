@@ -11,7 +11,7 @@ namespace ns3 {
 NS_LOG_COMPONENT_DEFINE("BoidsMobilityModel");
 
 constexpr double EPS = 1e-10;
-constexpr double DIST = 25.0;
+constexpr double DIST = 40.0;
 constexpr double DIST_ENEMY = 50.0;
 
 Vector operator*(Vector v, double a) {
@@ -65,7 +65,7 @@ TypeId BoidsMobilityModel::GetTypeId() {
                                           MakeDoubleChecker<double>())
                             .AddAttribute("WeightC",
                                           "Weight of 'Cohesion'",
-                                          DoubleValue(0.2),
+                                          DoubleValue(0.3),
                                           MakeDoubleAccessor(&BoidsMobilityModel::m_wc),
                                           MakeDoubleChecker<double>())
                             .AddAttribute("WeightE",
@@ -75,7 +75,7 @@ TypeId BoidsMobilityModel::GetTypeId() {
                                           MakeDoubleChecker<double>())
                             .AddAttribute("WeightCt",
                                           "Weight of 'Center'",
-                                          DoubleValue(0.1),
+                                          DoubleValue(0.2),
                                           MakeDoubleAccessor(&BoidsMobilityModel::m_wct),
                                           MakeDoubleChecker<double>())
                             .AddAttribute("Alpha",

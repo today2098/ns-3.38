@@ -198,17 +198,18 @@ void NetSim::CreateNodes(void) {
                                   "Interval", TimeValue(Seconds(1.0)));
     } else {
         mobility.SetMobilityModel("ns3::BoidsMobilityModel",
+                                  "Center", VectorValue(Vector(0.0, 0.0, m_height)),
                                   "MaxSpeed", DoubleValue(15.0),
                                   "Interval", TimeValue(Seconds(1.0)));
     }
     mobility.Install(boids);
 
-    for(auto itr = boids.Begin(); itr != boids.End(); ++itr) {
-        auto node = *itr;
-        auto mm = node->GetObject<BoidsMobilityModel>();
-        auto position = mm->GetPosition();
-        mm->SetAttribute("Center", VectorValue(Vector(position.x, position.y, position.z)));
-    }
+    // for(auto itr = boids.Begin(); itr != boids.End(); ++itr) {
+    //     auto node = *itr;
+    //     auto mm = node->GetObject<BoidsMobilityModel>();
+    //     auto position = mm->GetPosition();
+    //     mm->SetAttribute("Center", VectorValue(Vector(position.x, position.y, position.z)));
+    // }
 
     // Enenmy.
     auto enemy = CreateObject<Node>();
