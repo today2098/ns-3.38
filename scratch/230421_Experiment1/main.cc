@@ -231,7 +231,7 @@ void NetSim::ConfigureL2(void) {
 
     auto wifiChannel = YansWifiChannelHelper::Default();
     // wifiChannel.SetPropagationDelay("ns3::RandomPropagationDelayModel",
-    //                                 "Variable", StringValue("ns3::UniformRandomVariable[Min=0.0000001|Max=0.0000005]"));
+    //                                 "Variable", StringValue("ns3::UniformRandomVariable[Min=0.0001|Max=0.00005]"));
     auto channel = wifiChannel.Create();
 
     YansWifiPhyHelper wifiPhy;
@@ -303,7 +303,9 @@ void NetSim::Run(void) {
     int dataSize = 1000;
     double interval = 0.001;
     int cnt = 50;
+    Simulator::Schedule(Seconds(m_appStart - 5.0), &NetSim::SendPacket, this, m_sockets[0], "10.1.1.255", 12345, dataSize, interval, cnt);
     Simulator::Schedule(Seconds(m_appStart), &NetSim::SendPacket, this, m_sockets[0], "10.1.1.255", 12345, dataSize, interval, cnt);
+    Simulator::Schedule(Seconds(m_appStart + 5.0), &NetSim::SendPacket, this, m_sockets[0], "10.1.1.255", 12345, dataSize, interval, cnt);
 
     if(m_tracing) {
         Config::Connect("NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyTxBegin", MakeCallback(&NetSim::TracePhyTxBegin, this));
@@ -337,7 +339,7 @@ void NetSim::Run(void) {
     double ration = 0.0;
     for(int i = 1; i < m_vn; ++i) {
         oss << "[node " << i << "] totalRx: " << m_totalRx[i] << " bytes\n";
-        ration += (double)m_totalRx[i] / cnt / dataSize;
+        ration += (double)m_totalRx[i] / cnt / 3 / dataSize;
     }
     ration /= 25;
     oss << "ration: " << ration << "\n";
