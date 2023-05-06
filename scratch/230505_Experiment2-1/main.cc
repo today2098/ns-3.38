@@ -182,20 +182,13 @@ void NetSim::CreateNodes(void) {
                                   "DeltaX", DoubleValue(m_dist),
                                   "DeltaY", DoubleValue(m_dist),
                                   "Z", DoubleValue(m_height));
-    if(m_enable3D) {
-        mobility.SetMobilityModel("ns3::BoidsMobilityModel",
-                                  "Center", VectorValue(Vector(0.0, 0.0, m_height)),
-                                  "Enable3D", BooleanValue(true),
-                                  "MinZ", DoubleValue(m_height),
-                                  "MaxZ", DoubleValue(m_height + 10.0),
-                                  "MaxSpeed", DoubleValue(15.0),
-                                  "Interval", TimeValue(Seconds(1.0)));
-    } else {
-        mobility.SetMobilityModel("ns3::BoidsMobilityModel",
-                                  "Center", VectorValue(Vector(0.0, 0.0, m_height)),
-                                  "MaxSpeed", DoubleValue(15.0),
-                                  "Interval", TimeValue(Seconds(1.0)));
-    }
+    mobility.SetMobilityModel("ns3::BoidsMobilityModel",
+                              "Center", VectorValue(Vector(0.0, 0.0, m_height)),
+                              "Enable3D", BooleanValue(m_enable3D),
+                              "MinZ", DoubleValue(m_height),
+                              "MaxZ", DoubleValue(m_height + 10.0),
+                              "MaxSpeed", DoubleValue(15.0),
+                              "Interval", TimeValue(Seconds(1.0)));
     mobility.Install(m_nodes);
 
     // Enenmy.
