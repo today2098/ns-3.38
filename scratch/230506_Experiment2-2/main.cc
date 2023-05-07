@@ -191,7 +191,7 @@ void NetSim::CreateNodes(void) {
                               "MinZ", DoubleValue(m_height),
                               "MaxZ", DoubleValue(m_height + 10.0),
                               "MaxSpeed", DoubleValue(15.0),
-                              "Interval", TimeValue(Seconds(1.0)));
+                              "Interval", TimeValue(Seconds(0.5)));
     mobility.Install(m_nodes);
 
     for(auto itr = m_nodes.Begin(); itr != m_nodes.End(); ++itr) {
@@ -287,8 +287,8 @@ void NetSim::Run(void) {
 
     Simulator::Stop(Seconds(m_simStop));
 
-    int dataSize = 3000;
-    int cnt = 10;
+    int dataSize = 1000;
+    int cnt = 20;
     auto rng_node = CreateObject<UniformRandomVariable>();
     auto rng_interval = CreateObject<UniformRandomVariable>();
     for(int i = 0; i < cnt; ++i) {

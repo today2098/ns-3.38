@@ -183,13 +183,24 @@ void NetSim::CreateNodes(void) {
                                   "DeltaY", DoubleValue(m_dist),
                                   "Z", DoubleValue(m_height));
     mobility.SetMobilityModel("ns3::BoidsMobilityModel",
+                              "WeightS", DoubleValue(0.1),
+                              "WeightA", DoubleValue(0.2),
+                              "WeightC", DoubleValue(0.3),
+                              "Dist", DoubleValue(30.0),
                               "Center", VectorValue(Vector(0.0, 0.0, m_height)),
                               "Enable3D", BooleanValue(m_enable3D),
                               "MinZ", DoubleValue(m_height),
                               "MaxZ", DoubleValue(m_height + 10.0),
                               "MaxSpeed", DoubleValue(15.0),
-                              "Interval", TimeValue(Seconds(1.0)));
+                              "Interval", TimeValue(Seconds(0.5)));
     mobility.Install(m_nodes);
+
+    for(auto itr = m_nodes.Begin(); itr != m_nodes.End(); ++itr) {
+        auto node = *itr;
+        auto mm = node->GetObject<BoidsMobilityModel>();
+        auto position = mm->GetPosition();
+        mm->SetAttribute("Center", VectorValue(Vector(position.x, position.y, position.z)));
+    }
 
     // Enenmy.
     auto enemy = CreateObject<Node>();
@@ -277,8 +288,8 @@ void NetSim::Run(void) {
 
     Simulator::Stop(Seconds(m_simStop));
 
-    int dataSize = 3000;
-    int cnt = 10;
+    int dataSize = 1000;
+    int cnt = 20;
     auto rng_node = CreateObject<UniformRandomVariable>();
     auto rng_interval = CreateObject<UniformRandomVariable>();
     for(int i = 0; i < cnt; ++i) {
