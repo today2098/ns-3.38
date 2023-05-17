@@ -27,8 +27,6 @@ class NetSim {
     std::string m_prefix;  // m_prefix:=(ログファイルの接頭辞).
 
     int m_vn;                      // m_vn:=(ノード数).
-    double m_dist;                 // m_dist:=(ノード間距離).
-    double m_height;               // m_height:=(ノード群の高さ).
     bool m_disableBoids;           // m_disableBoids:=(ボイズモデルを無効にするか).
     bool m_enable3D;               // m_enable3D:=(3次元空間の移動を有効にするか).
     bool m_enableEnemy;            // m_enableEnemy:=(外敵を作成するか).
@@ -65,8 +63,6 @@ NetSim::NetSim(int argc, char *argv[]) {
     m_prefix = "boids-relay";
 
     m_vn = 7;  // BS (2 nodes) and Boids (5 nodes).
-    m_dist = 35.0;
-    m_height = 30.0;
     m_disableBoids = false;
     m_enable3D = false;
     m_enableEnemy = false;
@@ -143,6 +139,9 @@ void NetSim::TracePacket(std::string context, Ptr<const Packet> packet) {
 void NetSim::CreateNodes(void) {
     NS_LOG_FUNCTION(this);
 
+    double height = 30.0;
+    double dist = 35.0;
+
     // BS.
     NodeContainer bs(2);
     m_nodes.Add(bs);
@@ -168,13 +167,14 @@ void NetSim::CreateNodes(void) {
         node->AggregateObject(type);
     }
 
-    mobility.SetPositionAllocator("ns3::GridPositionAllocator",
-                                  "GridWidth", UintegerValue(5),
-                                  "MinX", DoubleValue(-2 * m_dist),
-                                  "MinY", DoubleValue(0.0),
-                                  "DeltaX", DoubleValue(m_dist),
-                                  "Z", DoubleValue(m_height));
     if(m_disableBoids) {
+        dist = 30.0;
+        mobility.SetPositionAllocator("ns3::GridPositionAllocator",
+                                      "GridWidth", UintegerValue(5),
+                                      "MinX", DoubleValue(-2 * dist),
+                                      "MinY", DoubleValue(0.0),
+                                      "DeltaX", DoubleValue(dist),
+                                      "Z", DoubleValue(height));
         mobility.SetMobilityModel("ns3::BoidsMobilityModel",
                                   "WeightS", DoubleValue(0.0),
                                   "WeightA", DoubleValue(0.0),
@@ -182,11 +182,17 @@ void NetSim::CreateNodes(void) {
                                   "WeightE", DoubleValue(0.2),
                                   "WeightCt", DoubleValue(0.2),
                                   "Enable3D", BooleanValue(m_enable3D),
-                                  "MinZ", DoubleValue(m_height),
-                                  "MaxZ", DoubleValue(m_height + 40.0),
+                                  "MinZ", DoubleValue(height),
+                                  "MaxZ", DoubleValue(height + 10.0),
                                   "MaxSpeed", DoubleValue(15.0),
                                   "Interval", TimeValue(Seconds(0.5)));
     } else {
+        mobility.SetPositionAllocator("ns3::GridPositionAllocator",
+                                      "GridWidth", UintegerValue(5),
+                                      "MinX", DoubleValue(-2 * dist),
+                                      "MinY", DoubleValue(0.0),
+                                      "DeltaX", DoubleValue(dist),
+                                      "Z", DoubleValue(height));
         mobility.SetMobilityModel("ns3::BoidsMobilityModel",
                                   "ZoneS", DoubleValue(70.0),
                                   "ZoneA", DoubleValue(70.0),
@@ -198,8 +204,8 @@ void NetSim::CreateNodes(void) {
                                   "WeightCt", DoubleValue(0.2),
                                   "Dist", DoubleValue(35.0),
                                   "Enable3D", BooleanValue(m_enable3D),
-                                  "MinZ", DoubleValue(m_height),
-                                  "MaxZ", DoubleValue(m_height + 40.0),
+                                  "MinZ", DoubleValue(height),
+                                  "MaxZ", DoubleValue(height + 10.0),
                                   "MaxSpeed", DoubleValue(15.0),
                                   "Interval", TimeValue(Seconds(0.5)));
     }
@@ -224,8 +230,8 @@ void NetSim::CreateNodes(void) {
 
     // Velocity of enemy is 10 m/s.
     auto model = enemy->GetObject<WaypointMobilityModel>();
-    model->AddWaypoint(Waypoint(Seconds(0.0), Vector(-500.0, 30.0, m_height)));
-    if(m_enableEnemy) model->AddWaypoint(Waypoint(Seconds(m_simStop), Vector(500.0, 30.0, m_height)));
+    model->AddWaypoint(Waypoint(Seconds(0.0), Vector(-500.0, 30.0, height)));
+    if(m_enableEnemy) model->AddWaypoint(Waypoint(Seconds(m_simStop), Vector(500.0, 30.0, height)));
 }
 
 void NetSim::ConfigureL2(void) {
