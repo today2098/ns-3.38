@@ -19,7 +19,7 @@ NS_LOG_COMPONENT_DEFINE("Main");
 
 class NetSim {
     const double EPS = 1e-10;
-    std::string OUTPUT_DIR = "output/boids-relay/";  // OUTPUT_DIR:=(ログファイルの出力ディレクトリ).
+    std::string OUTPUT_DIR = "output/boids_relay/";  // OUTPUT_DIR:=(ログファイルの出力ディレクトリ).
     std::string ANIM_DIR = "output/animation/";      // ANIM_DIR:=(netanim用出力ディレクトリ).
 
     bool m_tracing;        // m_tracing:=(トレーシングを有効にするか).
@@ -60,7 +60,7 @@ NetSim::NetSim(int argc, char *argv[]) {
 
     m_tracing = false;
     m_logging = false;
-    m_prefix = "boids-relay";
+    m_prefix = "boids_relay";
 
     m_vn = 7;  // BS (2 nodes) and Boids (5 nodes).
     m_disableBoids = false;
@@ -88,7 +88,7 @@ void NetSim::TracePosition(Time interval) {
         auto position = node->GetObject<MobilityModel>()->GetPosition();
 
         std::ostringstream oss;
-        oss << OUTPUT_DIR << m_prefix << "_position_" << node->GetId() << ".csv";
+        oss << OUTPUT_DIR << m_prefix << "-position-" << node->GetId() << ".csv";
         if(m_streams.find(oss.str()) == m_streams.end()) {
             AsciiTraceHelper ascii;
             m_streams[oss.str()] = ascii.CreateFileStream(oss.str());
@@ -103,15 +103,15 @@ void NetSim::TracePosition(Time interval) {
 
 void NetSim::TraceDistance(Time interval, int u, int v) {
     std::ostringstream oss;
-    oss << OUTPUT_DIR << m_prefix << "_distance_" << u << "_" << v << ".csv";
+    oss << OUTPUT_DIR << m_prefix << "-distance-" << u << "-" << v << ".csv";
     if(m_streams.find(oss.str()) == m_streams.end()) {
         AsciiTraceHelper ascii;
         m_streams[oss.str()] = ascii.CreateFileStream(oss.str());
         *m_streams[oss.str()]->GetStream() << "time,distance\n";
         *m_streams[oss.str()]->GetStream() << std::fixed << std::setprecision(4);
     }
-    auto posi_u = m_nodes.Get(u)->GetObject<MobilityModel>()->GetPosition();
-    auto posi_v = m_nodes.Get(v)->GetObject<MobilityModel>()->GetPosition();
+    auto posi_u = NodeList::GetNode(u)->GetObject<MobilityModel>()->GetPosition();
+    auto posi_v = NodeList::GetNode(v)->GetObject<MobilityModel>()->GetPosition();
     auto dist = CalculateDistance(posi_u, posi_v);
     *m_streams[oss.str()]->GetStream() << Simulator::Now().GetSeconds() << "," << dist << std::endl;
 
@@ -331,6 +331,11 @@ void NetSim::Run(void) {
     Simulator::ScheduleNow(&NetSim::TraceDistance, this, Seconds(1.0), 4, 5);
     Simulator::ScheduleNow(&NetSim::TraceDistance, this, Seconds(1.0), 5, 6);
     Simulator::ScheduleNow(&NetSim::TraceDistance, this, Seconds(1.0), 6, 1);
+    Simulator::ScheduleNow(&NetSim::TraceDistance, this, Seconds(1.0), 2, 7);
+    Simulator::ScheduleNow(&NetSim::TraceDistance, this, Seconds(1.0), 3, 7);
+    Simulator::ScheduleNow(&NetSim::TraceDistance, this, Seconds(1.0), 4, 7);
+    Simulator::ScheduleNow(&NetSim::TraceDistance, this, Seconds(1.0), 5, 7);
+    Simulator::ScheduleNow(&NetSim::TraceDistance, this, Seconds(1.0), 6, 7);
 
     if(m_logging) {
         YansWifiPhyHelper wifiPhy;

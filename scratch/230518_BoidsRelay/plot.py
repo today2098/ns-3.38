@@ -7,16 +7,18 @@ from mpl_toolkits.mplot3d import Axes3D
 import pandas as pd
 
 
-OUTPUT_DIR = 'output/boids-relay/'
-PREFIX = 'plot'
-N = 8  # ノード数．
-W = 12  # プロット幅．
+OUTPUT_DIR = 'output/boids_relay/'
+PREFIX = 'position'
+
+W = 10  # プロット幅．
 INTERVAL = 100  # [msec/frame]
 FRAMES = 100
+N = 8  # ノード数．
+
 
 data = []
 for i in range(N):
-    data.append(pd.read_csv(OUTPUT_DIR + 'boids-relay_position_' + str(i) + '.csv'))
+    data.append(pd.read_csv(OUTPUT_DIR + 'boids_relay-position-' + str(i) + '.csv'))
 
 
 # 開始time[sec]におけるノードiの座標を取得する．
@@ -25,11 +27,11 @@ def get_data(i, time):
     x = df.iloc[time].x
     y = df.iloc[time].y
     z = df.iloc[time].z
-    color = 'tab:blue'
+    color = 'tab:blue'  # Boids.
     if i < 2:
-        color = 'tab:orange'
+        color = 'tab:orange'  # BS.
     elif i == 7:
-        color = 'tab:red'
+        color = 'tab:red'  # Enemy.
     elif z >= 35:
         color = 'tab:green'
     return x, y, z, color
@@ -37,67 +39,61 @@ def get_data(i, time):
 
 # Plot by 2D (xy).
 fig = plt.figure(figsize=(W, W))
-ax = fig.add_subplot(1, 1, 1)
+ax = fig.add_subplot(111)
 
 
-def frame_2d_xy(i):
+def frame_xy(i):
     ax.cla()
-
     for j in range(N):
         x, y, _, color = get_data(j, i)
         ax.scatter(x, y, color=color)
         print('plot by xy', i, j, x, y, color)
-
     ax.set_xlim(-200, 200)
     ax.set_ylim(-200, 200)
     ax.grid()
 
 
-ani = animation.FuncAnimation(fig, frame_2d_xy, interval=INTERVAL, frames=FRAMES)
-ani.save(OUTPUT_DIR + PREFIX + '_2d_xy.gif')
+ani = animation.FuncAnimation(fig, frame_xy, interval=INTERVAL, frames=FRAMES)
+ani.save(OUTPUT_DIR + PREFIX + '-xy.gif')
 
 
 # Plot by 2D (xz).
 fig = plt.figure(figsize=(W, W))
-ax = fig.add_subplot(1, 1, 1)
+ax = fig.add_subplot(111)
 
 
-def frame_2d_xz(i):
+def frame_xz(i):
     ax.cla()
-
     for j in range(N):
         x, _, z, color = get_data(j, i)
         ax.scatter(x, z, color=color)
         print('plot by xz', i, j, x, z, color)
-
     ax.set_xlim(-200, 200)
     ax.set_ylim(0, 400)
     ax.grid()
 
 
-ani = animation.FuncAnimation(fig, frame_2d_xz, interval=INTERVAL, frames=FRAMES)
-ani.save(OUTPUT_DIR + PREFIX + '_2d_xz.gif')
+ani = animation.FuncAnimation(fig, frame_xz, interval=INTERVAL, frames=FRAMES)
+ani.save(OUTPUT_DIR + PREFIX + '-xz.gif')
 
 
 # Plot by 3D (xyz).
 fig = plt.figure(figsize=(W, W))
-ax = fig.add_subplot(1, 1, 1, projection='3d')
+ax = fig.add_subplot(111, projection='3d')
 
 
-def frame_3d(i):
+def frame_xyz(i):
     ax.cla()
-
     for j in range(N):
         x, y, z, color = get_data(j, i)
         ax.scatter(x, y, z, color=color)
         print('plot by xyz', i, j, x, y, z, color)
-
     ax.set_xlim(-150, 150)
     ax.set_ylim(-150, 150)
     ax.set_zlim(0, 100)
-    # ax.view_init(elev=90, azim=270)
+    # ax.view_init(elev=90, azim=270)  # 視点の角度を調整する．
 
 
-ani = animation.FuncAnimation(fig, frame_3d, interval=INTERVAL, frames=FRAMES)
-ani.save(OUTPUT_DIR + PREFIX + '_3d.gif')
-# plt.show()
+ani = animation.FuncAnimation(fig, frame_xyz, interval=INTERVAL, frames=FRAMES)
+ani.save(OUTPUT_DIR + PREFIX + '-xyz.gif')
+plt.close()
