@@ -162,11 +162,14 @@ void NetSim::CreateNodes(void) {
     if(m_disableBoids) {
         dist = 30.0;
         mobility.SetMobilityModel("ns3::BoidsMobilityModel",
+                                  "ZoneE", DoubleValue(100.0),
                                   "WeightS", DoubleValue(0.0),
                                   "WeightA", DoubleValue(0.0),
                                   "WeightC", DoubleValue(0.0),
                                   "WeightE", DoubleValue(0.2),
-                                  "WeightCt", DoubleValue(0.2),
+                                  "WeightCt", DoubleValue(0.3),
+                                  "Alpha", DoubleValue(0.5),
+                                  "DistEnemy", DoubleValue(50.0),
                                   "Enable3D", BooleanValue(m_enable3D),
                                   "MinZ", DoubleValue(height),
                                   "MaxZ", DoubleValue(height + 10.0),
@@ -177,12 +180,15 @@ void NetSim::CreateNodes(void) {
                                   "ZoneS", DoubleValue(70.0),
                                   "ZoneA", DoubleValue(70.0),
                                   "ZoneC", DoubleValue(70.0),
+                                  "ZoneE", DoubleValue(100.0),
                                   "WeightS", DoubleValue(0.1),
                                   "WeightA", DoubleValue(1.0),
                                   "WeightC", DoubleValue(0.3),
                                   "WeightE", DoubleValue(0.2),
-                                  "WeightCt", DoubleValue(0.2),
+                                  "WeightCt", DoubleValue(0.3),
+                                  "Alpha", DoubleValue(0.5),
                                   "Dist", DoubleValue(35.0),
+                                  "DistEnemy", DoubleValue(50.0),
                                   "Enable3D", BooleanValue(m_enable3D),
                                   "MinZ", DoubleValue(height),
                                   "MaxZ", DoubleValue(height + 10.0),
@@ -221,6 +227,8 @@ void NetSim::CreateNodes(void) {
     auto mm = enemy->GetObject<WaypointMobilityModel>();
     mm->AddWaypoint(Waypoint(Seconds(0.0), Vector(-500.0, 30.0, height)));
     if(m_enableEnemy) mm->AddWaypoint(Waypoint(Seconds(m_simStop), Vector(500.0, 30.0, height)));
+    // mm->AddWaypoint(Waypoint(Seconds(0.0), Vector(10.0, -500.0, height)));
+    // if(m_enableEnemy) mm->AddWaypoint(Waypoint(Seconds(m_simStop), Vector(10.0, 500.0, height)));
 
     auto type = CreateObject<BoidsType>();
     type->SetBoidsType(BoidsType::BoidsTypeEnum::ENEMY);
@@ -356,7 +364,8 @@ void NetSim::Run(void) {
         oss << "  Rx Packets:         " << stat.rxPackets << " packets\n";
         oss << "  Rx Bytes:           " << stat.rxBytes << " bytes\n";
         if(stat.delaySum.GetSeconds() > EPS) {
-            oss << "  Throughput:         " << (double)8 * stat.rxBytes / stat.delaySum.GetSeconds() / 1e6 << " Mbps\n";
+            auto time = stat.timeLastRxPacket.GetSeconds() - stat.timeFirstTxPacket.GetSeconds();
+            oss << "  Throughput:         " << (double)8 * stat.rxBytes / time / 1e6 << " Mbps\n";
         }
         if(stat.rxPackets > 0) {
             oss << "  Mean Delay:         " << Time(stat.delaySum / stat.rxPackets).As(Time::MS) << "\n";
