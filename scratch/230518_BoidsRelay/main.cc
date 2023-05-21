@@ -86,14 +86,13 @@ void NetSim::TracePosition(Time interval) {
     for(auto itr = NodeList::Begin(); itr != NodeList::End(); ++itr) {
         auto node = *itr;
         auto position = node->GetObject<MobilityModel>()->GetPosition();
-
         std::ostringstream oss;
         oss << OUTPUT_DIR << m_prefix << "-position-" << node->GetId() << ".csv";
         if(m_streams.find(oss.str()) == m_streams.end()) {
             AsciiTraceHelper ascii;
             m_streams[oss.str()] = ascii.CreateFileStream(oss.str());
-            *m_streams[oss.str()]->GetStream() << "time,x,y,z\n";
             *m_streams[oss.str()]->GetStream() << std::fixed << std::setprecision(4);
+            *m_streams[oss.str()]->GetStream() << "time,x,y,z\n";
         }
         *m_streams[oss.str()]->GetStream() << Simulator::Now().GetSeconds() << "," << position.x << "," << position.y << "," << position.z << std::endl;
     }
@@ -102,18 +101,18 @@ void NetSim::TracePosition(Time interval) {
 }
 
 void NetSim::TraceDistance(Time interval, int u, int v) {
+    auto posi_u = NodeList::GetNode(u)->GetObject<MobilityModel>()->GetPosition();
+    auto posi_v = NodeList::GetNode(v)->GetObject<MobilityModel>()->GetPosition();
+    auto distance = CalculateDistance(posi_u, posi_v);
     std::ostringstream oss;
     oss << OUTPUT_DIR << m_prefix << "-distance-" << u << "-" << v << ".csv";
     if(m_streams.find(oss.str()) == m_streams.end()) {
         AsciiTraceHelper ascii;
         m_streams[oss.str()] = ascii.CreateFileStream(oss.str());
-        *m_streams[oss.str()]->GetStream() << "time,distance\n";
         *m_streams[oss.str()]->GetStream() << std::fixed << std::setprecision(4);
+        *m_streams[oss.str()]->GetStream() << "time,distance\n";
     }
-    auto posi_u = NodeList::GetNode(u)->GetObject<MobilityModel>()->GetPosition();
-    auto posi_v = NodeList::GetNode(v)->GetObject<MobilityModel>()->GetPosition();
-    auto dist = CalculateDistance(posi_u, posi_v);
-    *m_streams[oss.str()]->GetStream() << Simulator::Now().GetSeconds() << "," << dist << std::endl;
+    *m_streams[oss.str()]->GetStream() << Simulator::Now().GetSeconds() << "," << distance << std::endl;
 
     Simulator::Schedule(interval, &NetSim::TraceDistance, this, interval, u, v);
 }
@@ -142,7 +141,7 @@ void NetSim::CreateNodes(void) {
     double height = 30.0;
     double dist = 35.0;
 
-    // BS.
+    // BSs.
     NodeContainer bs(2);
     m_nodes.Add(bs);
 
@@ -160,21 +159,8 @@ void NetSim::CreateNodes(void) {
     NodeContainer boids(5);
     m_nodes.Add(boids);
 
-    for(auto itr = m_nodes.Begin(); itr != m_nodes.End(); ++itr) {
-        auto node = *itr;
-        auto type = CreateObject<BoidsType>();
-        type->SetBoidsType(BoidsType::BoidsTypeEnum::BOID);
-        node->AggregateObject(type);
-    }
-
     if(m_disableBoids) {
         dist = 30.0;
-        mobility.SetPositionAllocator("ns3::GridPositionAllocator",
-                                      "GridWidth", UintegerValue(5),
-                                      "MinX", DoubleValue(-2 * dist),
-                                      "MinY", DoubleValue(0.0),
-                                      "DeltaX", DoubleValue(dist),
-                                      "Z", DoubleValue(height));
         mobility.SetMobilityModel("ns3::BoidsMobilityModel",
                                   "WeightS", DoubleValue(0.0),
                                   "WeightA", DoubleValue(0.0),
@@ -187,12 +173,6 @@ void NetSim::CreateNodes(void) {
                                   "MaxSpeed", DoubleValue(15.0),
                                   "Interval", TimeValue(Seconds(0.5)));
     } else {
-        mobility.SetPositionAllocator("ns3::GridPositionAllocator",
-                                      "GridWidth", UintegerValue(5),
-                                      "MinX", DoubleValue(-2 * dist),
-                                      "MinY", DoubleValue(0.0),
-                                      "DeltaX", DoubleValue(dist),
-                                      "Z", DoubleValue(height));
         mobility.SetMobilityModel("ns3::BoidsMobilityModel",
                                   "ZoneS", DoubleValue(70.0),
                                   "ZoneA", DoubleValue(70.0),
@@ -209,6 +189,12 @@ void NetSim::CreateNodes(void) {
                                   "MaxSpeed", DoubleValue(15.0),
                                   "Interval", TimeValue(Seconds(0.5)));
     }
+    mobility.SetPositionAllocator("ns3::GridPositionAllocator",
+                                  "GridWidth", UintegerValue(5),
+                                  "MinX", DoubleValue(-2 * dist),
+                                  "MinY", DoubleValue(0.0),
+                                  "DeltaX", DoubleValue(dist),
+                                  "Z", DoubleValue(height));
     mobility.Install(boids);
 
     for(auto itr = boids.Begin(); itr != boids.End(); ++itr) {
@@ -218,20 +204,27 @@ void NetSim::CreateNodes(void) {
         mm->SetAttribute("Center", VectorValue(Vector(position.x, position.y, position.z)));
     }
 
+    for(auto itr = m_nodes.Begin(); itr != m_nodes.End(); ++itr) {
+        auto node = *itr;
+        auto type = CreateObject<BoidsType>();
+        type->SetBoidsType(BoidsType::BoidsTypeEnum::BOID);
+        node->AggregateObject(type);
+    }
+
     // Enenmy.
     auto enemy = CreateObject<Node>();
-
-    auto type = CreateObject<BoidsType>();
-    type->SetBoidsType(BoidsType::BoidsTypeEnum::ENEMY);
-    enemy->AggregateObject(type);
 
     mobility.SetMobilityModel("ns3::WaypointMobilityModel");
     mobility.Install(enemy);
 
     // Velocity of enemy is 10 m/s.
-    auto model = enemy->GetObject<WaypointMobilityModel>();
-    model->AddWaypoint(Waypoint(Seconds(0.0), Vector(-500.0, 30.0, height)));
-    if(m_enableEnemy) model->AddWaypoint(Waypoint(Seconds(m_simStop), Vector(500.0, 30.0, height)));
+    auto mm = enemy->GetObject<WaypointMobilityModel>();
+    mm->AddWaypoint(Waypoint(Seconds(0.0), Vector(-500.0, 30.0, height)));
+    if(m_enableEnemy) mm->AddWaypoint(Waypoint(Seconds(m_simStop), Vector(500.0, 30.0, height)));
+
+    auto type = CreateObject<BoidsType>();
+    type->SetBoidsType(BoidsType::BoidsTypeEnum::ENEMY);
+    enemy->AggregateObject(type);
 }
 
 void NetSim::ConfigureL2(void) {
@@ -287,7 +280,7 @@ void NetSim::ConfigureL7(void) {
     // sinkApp.Stop(Seconds(95.0));
 
     OnOffHelper onoff("ns3::UdpSocketFactory", InetSocketAddress("10.1.1.2", port));
-    // onoff.SetAttribute("DataRate", DataRateValue(DataRate("1Mbps")));
+    onoff.SetAttribute("DataRate", DataRateValue(DataRate("500Kbps")));
     auto onoffApp = onoff.Install(m_nodes.Get(0));
     onoffApp.Start(Seconds(20.0));
     onoffApp.Stop(Seconds(80.0));
