@@ -170,6 +170,8 @@ void BoidsMobilityModel::Update() {
     if(m_enable3D) {
         if(position.z < m_minZ and new_speed.z < 0.0) new_speed.z = 0.0;
         if(position.z > m_maxZ and new_speed.z > 0.0) new_speed.z = 0.0;
+    } else {
+        new_speed.z = 0.0;
     }
     if(m_maxSpeed >= 0.0 and new_speed.GetLength() > m_maxSpeed) {
         new_speed = new_speed / new_speed.GetLength() * m_maxSpeed;
