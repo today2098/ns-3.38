@@ -221,7 +221,7 @@ Vector BoidsMobilityModel::Alignment() {
             }
         }
     }
-    res = res / cnt_neighbors;
+    if(cnt_neighbors > 0) res = res / cnt_neighbors;
     return res;
 }
 
@@ -242,8 +242,11 @@ Vector BoidsMobilityModel::Cohesion() {
             }
         }
     }
-    tmp = tmp / cnt_neighbors;
-    Vector res = tmp - position;
+    auto res = Vector(0.0, 0.0, 0.0);
+    if(cnt_neighbors > 0) {
+        tmp = tmp / cnt_neighbors;
+        res = tmp - position;
+    }
     return res;
 }
 
