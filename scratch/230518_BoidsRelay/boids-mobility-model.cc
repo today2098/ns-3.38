@@ -180,6 +180,7 @@ Vector BoidsMobilityModel::Separation() {
     int cnt_neighbors = 0;
     for(auto itr = NodeList::Begin(); itr != NodeList::End(); ++itr) {
         auto neighbor = *itr;
+        if(m_neighbors.find(neighbor->GetId()) == m_neighbors.end()) continue;
         auto type = neighbor->GetObject<BoidsType>();
         if(type and type->GetBoidsType() == BoidsType::BoidsTypeEnum::BOID) {
             auto neighbor_model = neighbor->GetObject<MobilityModel>();
@@ -201,6 +202,7 @@ Vector BoidsMobilityModel::Alignment() {
     int cnt_neighbors = 0;
     for(auto itr = NodeList::Begin(); itr != NodeList::End(); ++itr) {
         auto neighbor = *itr;
+        if(m_neighbors.find(neighbor->GetId()) == m_neighbors.end()) continue;
         auto type = neighbor->GetObject<BoidsType>();
         if(type and type->GetBoidsType() == BoidsType::BoidsTypeEnum::BOID) {
             auto neighbor_model = neighbor->GetObject<MobilityModel>();
@@ -223,6 +225,7 @@ Vector BoidsMobilityModel::Cohesion() {
     int cnt_neighbors = 0;
     for(auto itr = NodeList::Begin(); itr != NodeList::End(); ++itr) {
         auto neighbor = *itr;
+        if(m_neighbors.find(neighbor->GetId()) == m_neighbors.end()) continue;
         auto type = neighbor->GetObject<BoidsType>();
         if(type and type->GetBoidsType() == BoidsType::BoidsTypeEnum::BOID) {
             auto neighbor_model = neighbor->GetObject<MobilityModel>();
@@ -264,6 +267,14 @@ Vector BoidsMobilityModel::Center() {
     auto position = m_helper.GetCurrentPosition();
     auto res = m_center - position;
     return res;
+}
+
+void BoidsMobilityModel::SetNeighbor(int v) {
+    m_neighbors.insert(v);
+}
+
+void BoidsMobilityModel::DeleteNeighbor(int v) {
+    m_neighbors.erase(v);
 }
 
 Vector BoidsMobilityModel::DoGetPosition() const {

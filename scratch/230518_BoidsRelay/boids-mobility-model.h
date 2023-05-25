@@ -28,6 +28,8 @@ class BoidsMobilityModel : public MobilityModel {
     double m_maxZ;        // m_maxZ:=(最高高度). m_enable3D=trueのとき有効．
     double m_maxSpeed;    // m_maxSpeed:=(最高速度). If the value is -1, the speed is unlimited.
 
+    std::set<int> m_neighbors;
+
     ConstantVelocityHelper m_helper;  // m_helper:=(Helper for this object).
     Time m_interval;                  // m_interval:=(更新間隔).
     EventId m_event;                  // m_event:=(次の更新イベント).
@@ -54,6 +56,9 @@ public:
     static TypeId GetTypeId();
 
     BoidsMobilityModel();
+
+    void SetNeighbor(int v);
+    void DeleteNeighbor(int v);
 };
 
 }  // namespace ns3

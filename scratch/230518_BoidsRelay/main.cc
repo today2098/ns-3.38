@@ -179,7 +179,6 @@ void NetSim::CreateNodes(void) {
     m_nodes.Add(boids);
 
     if(m_disableBoids) {
-        dist = 30.0;
         mobility.SetMobilityModel("ns3::BoidsMobilityModel",
                                   "ZoneE", DoubleValue(100.0),
                                   "WeightS", DoubleValue(0.0),
@@ -228,6 +227,17 @@ void NetSim::CreateNodes(void) {
         auto position = mm->GetPosition();
         mm->SetAttribute("Center", VectorValue(Vector(position.x, position.y, position.z)));
     }
+
+    NodeList::GetNode(2)->GetObject<BoidsMobilityModel>()->SetNeighbor(0);
+    NodeList::GetNode(2)->GetObject<BoidsMobilityModel>()->SetNeighbor(3);
+    NodeList::GetNode(3)->GetObject<BoidsMobilityModel>()->SetNeighbor(2);
+    NodeList::GetNode(3)->GetObject<BoidsMobilityModel>()->SetNeighbor(4);
+    NodeList::GetNode(4)->GetObject<BoidsMobilityModel>()->SetNeighbor(3);
+    NodeList::GetNode(4)->GetObject<BoidsMobilityModel>()->SetNeighbor(5);
+    NodeList::GetNode(5)->GetObject<BoidsMobilityModel>()->SetNeighbor(4);
+    NodeList::GetNode(5)->GetObject<BoidsMobilityModel>()->SetNeighbor(6);
+    NodeList::GetNode(6)->GetObject<BoidsMobilityModel>()->SetNeighbor(5);
+    NodeList::GetNode(6)->GetObject<BoidsMobilityModel>()->SetNeighbor(1);
 
     for(auto itr = m_nodes.Begin(); itr != m_nodes.End(); ++itr) {
         auto node = *itr;
