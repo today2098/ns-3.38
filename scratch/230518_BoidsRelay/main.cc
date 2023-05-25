@@ -38,6 +38,7 @@ class NetSim {
     std::map<std::string, Ptr<OutputStreamWrapper>> m_streams;  // m_streams[]:=(出力ストリーム).
 
     void TracePosition(Time interval);
+    void TraceVelocity(Time interval);
     void TraceDistance(Time interval, int u, int v);
     void TracePhyTxBegin(std::string context, Ptr<const Packet> packet, double txPowerW);
     void TracePhyRxBegin(std::string context, Ptr<const Packet> packet, RxPowerWattPerChannelBand rxPowerW);
@@ -98,6 +99,24 @@ void NetSim::TracePosition(Time interval) {
     }
 
     Simulator::Schedule(interval, &NetSim::TracePosition, this, interval);
+}
+
+void NetSim::TraceVelocity(Time interval) {
+    for(auto itr = NodeList::Begin(); itr != NodeList::End(); ++itr) {
+        auto node = *itr;
+        auto velocity = node->GetObject<MobilityModel>()->GetVelocity();
+        std::ostringstream oss;
+        oss << OUTPUT_DIR << m_prefix << "-velocity-" << node->GetId() << ".csv";
+        if(m_streams.find(oss.str()) == m_streams.end()) {
+            AsciiTraceHelper ascii;
+            m_streams[oss.str()] = ascii.CreateFileStream(oss.str());
+            *m_streams[oss.str()]->GetStream() << std::fixed << std::setprecision(4);
+            *m_streams[oss.str()]->GetStream() << "time,velocity\n";
+        }
+        *m_streams[oss.str()]->GetStream() << Simulator::Now().GetSeconds() << "," << velocity.GetLength() << std::endl;
+    }
+
+    Simulator::Schedule(interval, &NetSim::TraceVelocity, this, interval);
 }
 
 void NetSim::TraceDistance(Time interval, int u, int v) {
@@ -225,8 +244,8 @@ void NetSim::CreateNodes(void) {
 
     // Velocity of enemy is 10 m/s.
     auto mm = enemy->GetObject<WaypointMobilityModel>();
-    mm->AddWaypoint(Waypoint(Seconds(0.0), Vector(-500.0, 30.0, height)));
-    if(m_enableEnemy) mm->AddWaypoint(Waypoint(Seconds(m_simStop), Vector(500.0, 30.0, height)));
+    mm->AddWaypoint(Waypoint(Seconds(0.0), Vector(-500.0, 10.0, height)));
+    if(m_enableEnemy) mm->AddWaypoint(Waypoint(Seconds(m_simStop), Vector(500.0, 10.0, height)));
     // mm->AddWaypoint(Waypoint(Seconds(0.0), Vector(10.0, -500.0, height)));
     // if(m_enableEnemy) mm->AddWaypoint(Waypoint(Seconds(m_simStop), Vector(10.0, 500.0, height)));
 
@@ -326,6 +345,7 @@ void NetSim::Run(void) {
 
     std::filesystem::create_directories(OUTPUT_DIR);
     Simulator::ScheduleNow(&NetSim::TracePosition, this, Seconds(1.0));
+    Simulator::ScheduleNow(&NetSim::TraceVelocity, this, Seconds(1.0));
     Simulator::ScheduleNow(&NetSim::TraceDistance, this, Seconds(1.0), 0, 2);
     Simulator::ScheduleNow(&NetSim::TraceDistance, this, Seconds(1.0), 2, 3);
     Simulator::ScheduleNow(&NetSim::TraceDistance, this, Seconds(1.0), 3, 4);

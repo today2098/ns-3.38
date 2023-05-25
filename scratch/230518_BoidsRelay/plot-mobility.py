@@ -8,7 +8,7 @@ import pandas as pd
 
 
 OUTPUT_DIR = 'output/boids_relay/'
-PREFIX = 'position'
+PREFIX = 'mobility'
 
 W = 8.0  # プロット幅．
 INTERVAL = 100  # [msec/frame]
