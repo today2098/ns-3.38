@@ -174,7 +174,7 @@ void NetSim::CreateNodes(void) {
                                   "MinZ", DoubleValue(height),
                                   "MaxZ", DoubleValue(height + 10.0),
                                   "MaxSpeed", DoubleValue(15.0),
-                                  "Interval", TimeValue(Seconds(0.5)));
+                                  "Interval", TimeValue(Seconds(0.1)));
     } else {
         mobility.SetMobilityModel("ns3::BoidsMobilityModel",
                                   "ZoneS", DoubleValue(70.0),
@@ -193,7 +193,7 @@ void NetSim::CreateNodes(void) {
                                   "MinZ", DoubleValue(height),
                                   "MaxZ", DoubleValue(height + 10.0),
                                   "MaxSpeed", DoubleValue(15.0),
-                                  "Interval", TimeValue(Seconds(0.5)));
+                                  "Interval", TimeValue(Seconds(0.1)));
     }
     mobility.SetPositionAllocator("ns3::GridPositionAllocator",
                                   "GridWidth", UintegerValue(5),

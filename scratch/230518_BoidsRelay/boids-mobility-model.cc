@@ -118,7 +118,7 @@ TypeId BoidsMobilityModel::GetTypeId() {
                                           MakeDoubleChecker<double>())
                             .AddAttribute("Interval",
                                           "Interval to update.",
-                                          TimeValue(Seconds(0.5)),
+                                          TimeValue(Seconds(0.1)),
                                           MakeTimeAccessor(&BoidsMobilityModel::m_interval),
                                           MakeTimeChecker())
                             .AddAttribute("Eps",
@@ -147,26 +147,16 @@ void BoidsMobilityModel::DoInitializePrivate() {
     m_helper.Unpause();
     NotifyCourseChange();
 
-    Simulator::ScheduleNow(&BoidsMobilityModel::UpdateInfo, this);
-    m_event = Simulator::Schedule(Seconds(0.1), &BoidsMobilityModel::Update, this);
-}
-
-void BoidsMobilityModel::UpdateInfo() {
-    m_flag = true;
-
-    Simulator::Schedule(m_interval, &BoidsMobilityModel::UpdateInfo, this);
+    m_event.Cancel();
+    m_event = Simulator::ScheduleNow(&BoidsMobilityModel::Update, this);
 }
 
 void BoidsMobilityModel::Update() {
     m_helper.Update();
     auto position = m_helper.GetCurrentPosition();
     auto speed = m_helper.GetVelocity();
-    auto new_speed = speed;
-    if(m_flag) {
-        new_speed = (1 - m_alpha) * speed + m_alpha * (m_ws * Separation() + m_wa * Alignment() + m_wc * Cohesion() + m_we * Enemy() + m_wct * Center());
-        m_flag = false;
-    }
-    new_speed = new_speed + Vector(m_eps->GetValue(), m_eps->GetValue(), (m_enable3D ? m_eps->GetValue() : 0));
+    auto new_speed = (1 - m_alpha) * speed + m_alpha * (m_ws * Separation() + m_wa * Alignment() + m_wc * Cohesion() + m_we * Enemy() + m_wct * Center());
+    new_speed = new_speed + Vector(m_eps->GetValue(), m_eps->GetValue(), m_eps->GetValue());
     if(m_enable3D) {
         if(position.z < m_minZ and new_speed.z < 0.0) new_speed.z = 0.0;
         if(position.z > m_maxZ and new_speed.z > 0.0) new_speed.z = 0.0;
@@ -181,7 +171,7 @@ void BoidsMobilityModel::Update() {
     NotifyCourseChange();
 
     m_event.Cancel();
-    m_event = Simulator::Schedule(Seconds(0.1), &BoidsMobilityModel::Update, this);
+    m_event = Simulator::Schedule(m_interval, &BoidsMobilityModel::Update, this);
 }
 
 Vector BoidsMobilityModel::Separation() {
@@ -283,7 +273,8 @@ Vector BoidsMobilityModel::DoGetPosition() const {
 
 void BoidsMobilityModel::DoSetPosition(const Vector &position) {
     m_helper.SetPosition(position);
-    NotifyCourseChange();
+    m_event.Cancel();
+    m_event = Simulator::ScheduleNow(&BoidsMobilityModel::DoInitializePrivate, this);
 }
 
 Vector BoidsMobilityModel::DoGetVelocity() const {

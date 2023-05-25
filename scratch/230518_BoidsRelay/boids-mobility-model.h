@@ -38,7 +38,6 @@ class BoidsMobilityModel : public MobilityModel {
     void DoDispose() override;
 
     void DoInitializePrivate();
-    void UpdateInfo();
     void Update();
 
     Vector Separation();
