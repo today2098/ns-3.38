@@ -29,7 +29,6 @@ class BoidsMobilityModel : public MobilityModel {
     double m_maxSpeed;    // m_maxSpeed:=(最高速度). If the value is -1, the speed is unlimited.
 
     ConstantVelocityHelper m_helper;  // m_helper:=(Helper for this object).
-    bool m_flag;                      // m_flag:=(更新にBoids Modelを用いるか).
     Time m_interval;                  // m_interval:=(更新間隔).
     EventId m_event;                  // m_event:=(次の更新イベント).
     Ptr<RandomVariableStream> m_eps;
