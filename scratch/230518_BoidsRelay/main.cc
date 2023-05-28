@@ -26,8 +26,12 @@ class NetSim {
     bool m_logging;        // m_logging:=(ロギングを有効にするか).
     std::string m_prefix;  // m_prefix:=(ログファイルの接頭辞).
 
+    double m_ws;
+    double m_wa;
+    double m_wc;
+    double m_dist;
+
     int m_vn;                      // m_vn:=(ノード数).
-    bool m_disableBoids;           // m_disableBoids:=(ボイズモデルを無効にするか).
     bool m_enable3D;               // m_enable3D:=(3次元空間の移動を有効にするか).
     bool m_enableEnemy;            // m_enableEnemy:=(外敵を作成するか).
     NodeContainer m_nodes;         // m_nodes:=(ノードコンテナ).
@@ -63,8 +67,12 @@ NetSim::NetSim(int argc, char *argv[]) {
     m_logging = false;
     m_prefix = "boids_relay";
 
+    m_ws = 0.1;
+    m_wa = 1.0;
+    m_wc = 0.3;
+    m_dist = 35.0;
+
     m_vn = 7;  // BS (2 nodes) and Boids (5 nodes).
-    m_disableBoids = false;
     m_enable3D = false;
     m_enableEnemy = false;
     m_simStop = 100.0;
@@ -73,7 +81,10 @@ NetSim::NetSim(int argc, char *argv[]) {
     cmd.AddValue("tracing", "Enable tracing, if true", m_tracing);
     cmd.AddValue("logging", "Enable logging, if true", m_logging);
     cmd.AddValue("prefix", "Prefix of log files", m_prefix);
-    cmd.AddValue("disableBoids", "Disable Boids Model, if true", m_disableBoids);
+    cmd.AddValue("ws", "", m_ws);
+    cmd.AddValue("wa", "", m_wa);
+    cmd.AddValue("wc", "", m_wc);
+    cmd.AddValue("dist", "", m_dist);
     cmd.AddValue("3d", "Enable 3D, if true", m_enable3D);
     cmd.AddValue("enemy", "Enable enemy, if true", m_enableEnemy);
     cmd.Parse(argc, argv);
@@ -158,7 +169,6 @@ void NetSim::CreateNodes(void) {
     NS_LOG_FUNCTION(this);
 
     double height = 30.0;
-    double dist = 35.0;
 
     // BSs.
     NodeContainer bs(2);
@@ -178,46 +188,29 @@ void NetSim::CreateNodes(void) {
     NodeContainer boids(5);
     m_nodes.Add(boids);
 
-    if(m_disableBoids) {
-        mobility.SetMobilityModel("ns3::BoidsMobilityModel",
-                                  "ZoneE", DoubleValue(100.0),
-                                  "WeightS", DoubleValue(0.0),
-                                  "WeightA", DoubleValue(0.0),
-                                  "WeightC", DoubleValue(0.0),
-                                  "WeightE", DoubleValue(0.2),
-                                  "WeightCt", DoubleValue(0.3),
-                                  "Alpha", DoubleValue(0.5),
-                                  "DistEnemy", DoubleValue(50.0),
-                                  "Enable3D", BooleanValue(m_enable3D),
-                                  "MinZ", DoubleValue(height),
-                                  "MaxZ", DoubleValue(height + 10.0),
-                                  "MaxSpeed", DoubleValue(15.0),
-                                  "Interval", TimeValue(Seconds(0.1)));
-    } else {
-        mobility.SetMobilityModel("ns3::BoidsMobilityModel",
-                                  "ZoneS", DoubleValue(70.0),
-                                  "ZoneA", DoubleValue(70.0),
-                                  "ZoneC", DoubleValue(70.0),
-                                  "ZoneE", DoubleValue(100.0),
-                                  "WeightS", DoubleValue(0.1),
-                                  "WeightA", DoubleValue(1.0),
-                                  "WeightC", DoubleValue(0.3),
-                                  "WeightE", DoubleValue(0.2),
-                                  "WeightCt", DoubleValue(0.3),
-                                  "Alpha", DoubleValue(0.5),
-                                  "Dist", DoubleValue(35.0),
-                                  "DistEnemy", DoubleValue(50.0),
-                                  "Enable3D", BooleanValue(m_enable3D),
-                                  "MinZ", DoubleValue(height),
-                                  "MaxZ", DoubleValue(height + 10.0),
-                                  "MaxSpeed", DoubleValue(15.0),
-                                  "Interval", TimeValue(Seconds(0.1)));
-    }
+    mobility.SetMobilityModel("ns3::BoidsMobilityModel",
+                              "ZoneS", DoubleValue(70.0),
+                              "ZoneA", DoubleValue(70.0),
+                              "ZoneC", DoubleValue(70.0),
+                              "ZoneE", DoubleValue(100.0),
+                              "WeightS", DoubleValue(m_ws),
+                              "WeightA", DoubleValue(m_wa),
+                              "WeightC", DoubleValue(m_wc),
+                              "WeightE", DoubleValue(0.2),
+                              "WeightCt", DoubleValue(0.3),
+                              "Alpha", DoubleValue(0.5),
+                              "Dist", DoubleValue(m_dist),
+                              "DistEnemy", DoubleValue(50.0),
+                              "Enable3D", BooleanValue(m_enable3D),
+                              "MinZ", DoubleValue(height),
+                              "MaxZ", DoubleValue(height + 10.0),
+                              "MaxSpeed", DoubleValue(15.0),
+                              "Interval", TimeValue(Seconds(0.1)));
     mobility.SetPositionAllocator("ns3::GridPositionAllocator",
                                   "GridWidth", UintegerValue(5),
-                                  "MinX", DoubleValue(-2 * dist),
+                                  "MinX", DoubleValue(-2 * m_dist),
                                   "MinY", DoubleValue(0.0),
-                                  "DeltaX", DoubleValue(dist),
+                                  "DeltaX", DoubleValue(m_dist),
                                   "Z", DoubleValue(height));
     mobility.Install(boids);
 
@@ -405,6 +398,15 @@ void NetSim::Run(void) {
     }
     oss << "-----------------------------<";
     NS_LOG_UNCOND(oss.str());
+
+    std::string cmd1 = "python3 scratch/230518_BoidsRelay/plot-distance-nodes.py " + std::to_string(m_ws) + " " + std::to_string(m_wa) + " " + std::to_string(m_wc) + " " + std::to_string(m_dist) + " " + std::to_string(m_enableEnemy);
+    NS_LOG_UNCOND(cmd1 << ": " << system(cmd1.c_str()));
+    std::string cmd2 = "python3 scratch/230518_BoidsRelay/plot-distance-enemy.py " + std::to_string(m_ws) + " " + std::to_string(m_wa) + " " + std::to_string(m_wc) + " " + std::to_string(m_dist) + " " + std::to_string(m_enableEnemy);
+    NS_LOG_UNCOND(cmd2 << ": " << system(cmd2.c_str()));
+    std::string cmd3 = "python3 scratch/230518_BoidsRelay/plot-velocity.py " + std::to_string(m_ws) + " " + std::to_string(m_wa) + " " + std::to_string(m_wc) + " " + std::to_string(m_dist) + " " + std::to_string(m_enableEnemy);
+    NS_LOG_UNCOND(cmd3 << ": " << system(cmd3.c_str()));
+    std::string cmd4 = "python3 scratch/230518_BoidsRelay/plot-mobility.py " + std::to_string(m_ws) + " " + std::to_string(m_wa) + " " + std::to_string(m_wc) + " " + std::to_string(m_dist) + " " + std::to_string(m_enableEnemy);
+    NS_LOG_UNCOND(cmd4 << ": " << system(cmd4.c_str()));
 
     Simulator::Destroy();
 }

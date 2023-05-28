@@ -1,5 +1,6 @@
 # 開始後100秒間のノードの動きを10倍速でプロットする．
 
+import sys
 # import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
@@ -8,7 +9,7 @@ import pandas as pd
 
 
 OUTPUT_DIR = 'output/boids_relay/'
-PREFIX = 'mobility'
+PREFIX = 'mobility' + '-' + sys.argv[1] + '-' + sys.argv[2] + '-' + sys.argv[3] + '-' + sys.argv[4] + '-' + sys.argv[5]
 
 W = 8.0  # プロット幅．
 INTERVAL = 100  # [msec/frame]
@@ -56,11 +57,13 @@ def frame_xy(i):
     for j in range(N):
         x, y, _, color, label = get_data(j, i)
         ax.scatter(x, y, color=color, label=label)
-        print('plot by xy', i, j, x, y, color, label)
+        # print('plot by xy', i, j, x, y, color, label)
     ax.set_xlim(-200, 200)
     ax.set_ylim(-200, 200)
     ax.set_xlabel('$x$')
     ax.set_ylabel('$y$')
+    ax.set_title('XY ($W_S: ' + sys.argv[1] + ', W_A: ' + sys.argv[2] +
+                 ', W_C: ' + sys.argv[3] + ', Dist: ' + sys.argv[4] + '$)')
     legend_without_duplicate_labels(ax)
     ax.grid()
 
@@ -79,11 +82,13 @@ def frame_xz(i):
     for j in range(N):
         x, _, z, color, label = get_data(j, i)
         ax.scatter(x, z, color=color, label=label)
-        print('plot by xz', i, j, x, z, color, label)
+        # print('plot by xz', i, j, x, z, color, label)
     ax.set_xlim(-200, 200)
     ax.set_ylim(0, 400)
     ax.set_xlabel('$x$')
     ax.set_ylabel('$z$')
+    ax.set_title('XZ ($W_S: ' + sys.argv[1] + ', W_A: ' + sys.argv[2] +
+                 ', W_C: ' + sys.argv[3] + ', Dist: ' + sys.argv[4] + '$)')
     legend_without_duplicate_labels(ax)
     ax.grid()
 
@@ -102,13 +107,15 @@ def frame_xyz(i):
     for j in range(N):
         x, y, z, color, label = get_data(j, i)
         ax.scatter(x, y, z, color=color, label=label)
-        print('plot by xyz', i, j, x, y, z, color, label)
+        # print('plot by xyz', i, j, x, y, z, color, label)
     ax.set_xlim(-150, 150)
     ax.set_ylim(-150, 150)
     ax.set_zlim(0, 100)
     ax.set_xlabel('$x$')
     ax.set_ylabel('$y$')
     ax.set_zlabel('$z$')
+    ax.set_title('XYZ ($W_S: ' + sys.argv[1] + ', W_A: ' + sys.argv[2] +
+                 ', W_C: ' + sys.argv[3] + ', Dist: ' + sys.argv[4] + '$)')
     legend_without_duplicate_labels(ax)
     # ax.view_init(elev=90, azim=270)  # 視点の角度を調整する．
 
