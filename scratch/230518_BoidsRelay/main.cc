@@ -37,6 +37,7 @@ class NetSim {
     NodeContainer m_nodes;         // m_nodes:=(ノードコンテナ).
     NetDeviceContainer m_devices;  // m_devices:=(デバイスコンテナ).
     Ipv4InterfaceContainer m_ifs;  // m_ifs:=(インターフェイスコンテナ).
+    ApplicationContainer m_apps;   // m_apps:=(アプリケーションコンテナ).
     double m_simStop;              // m_simStop:=(シミュレーション終了時間).
 
     std::map<std::string, Ptr<OutputStreamWrapper>> m_streams;  // m_streams[]:=(出力ストリーム).
@@ -47,6 +48,7 @@ class NetSim {
     void TracePhyTxBegin(std::string context, Ptr<const Packet> packet, double txPowerW);
     void TracePhyRxBegin(std::string context, Ptr<const Packet> packet, RxPowerWattPerChannelBand rxPowerW);
     void TracePacket(std::string context, Ptr<const Packet> packet);
+    void TraceTotalRx(Time interval);
 
     void CreateNodes(void);
     void ConfigureL2(void);
@@ -163,6 +165,20 @@ void NetSim::TracePhyRxBegin(std::string context, Ptr<const Packet> packet, RxPo
 
 void NetSim::TracePacket(std::string context, Ptr<const Packet> packet) {
     NS_LOG_FUNCTION(this << context << packet);
+}
+
+void NetSim::TraceTotalRx(Time interval) {
+    auto sinkApp = DynamicCast<PacketSink>(m_apps.Get(1));
+    std::ostringstream oss;
+    oss << OUTPUT_DIR << m_prefix << "-total_rx.csv";
+    if(m_streams.find(oss.str()) == m_streams.end()) {
+        AsciiTraceHelper ascii;
+        m_streams[oss.str()] = ascii.CreateFileStream(oss.str());
+        *m_streams[oss.str()]->GetStream() << "time,total_rx\n";
+    }
+    *m_streams[oss.str()]->GetStream() << Simulator::Now().GetSeconds() << "," << sinkApp->GetTotalRx() << std::endl;
+
+    Simulator::Schedule(interval, &NetSim::TraceTotalRx, this, interval);
 }
 
 void NetSim::CreateNodes(void) {
@@ -311,14 +327,18 @@ void NetSim::ConfigureL7(void) {
 
     OnOffHelper onoff("ns3::UdpSocketFactory", InetSocketAddress("10.1.1.2", port));
     onoff.SetAttribute("DataRate", DataRateValue(DataRate("500Kbps")));
+    onoff.SetAttribute("OffTime", StringValue("ns3::ConstantRandomVariable[Constant=0.0]"));
+    onoff.SetAttribute("OnTime", StringValue("ns3::ConstantRandomVariable[Constant=1.0]"));
     auto onoffApp = onoff.Install(m_nodes.Get(0));
     onoffApp.Start(Seconds(20.0));
     onoffApp.Stop(Seconds(80.0));
+    m_apps.Add(onoffApp);
 
     PacketSinkHelper sink("ns3::UdpSocketFactory", InetSocketAddress(Ipv4Address::GetAny(), port));
     auto sinkApp = sink.Install(m_nodes.Get(1));
     sinkApp.Start(Seconds(5.0));
     sinkApp.Stop(Seconds(95.0));
+    m_apps.Add(sinkApp);
 }
 
 void NetSim::Run(void) {
@@ -360,6 +380,7 @@ void NetSim::Run(void) {
     Simulator::ScheduleNow(&NetSim::TraceDistance, this, Seconds(1.0), 4, 7);
     Simulator::ScheduleNow(&NetSim::TraceDistance, this, Seconds(1.0), 5, 7);
     Simulator::ScheduleNow(&NetSim::TraceDistance, this, Seconds(1.0), 6, 7);
+    Simulator::ScheduleNow(&NetSim::TraceTotalRx, this, Seconds(1.0));
 
     if(m_logging) {
         YansWifiPhyHelper wifiPhy;
@@ -407,6 +428,8 @@ void NetSim::Run(void) {
     NS_LOG_UNCOND(cmd3 << ": " << system(cmd3.c_str()));
     std::string cmd4 = "python3 scratch/230518_BoidsRelay/plot-mobility.py " + std::to_string(m_ws) + " " + std::to_string(m_wa) + " " + std::to_string(m_wc) + " " + std::to_string(m_dist) + " " + std::to_string(m_enableEnemy);
     NS_LOG_UNCOND(cmd4 << ": " << system(cmd4.c_str()));
+    std::string cmd5 = "python3 scratch/230518_BoidsRelay/plot-total_rx.py " + std::to_string(m_ws) + " " + std::to_string(m_wa) + " " + std::to_string(m_wc) + " " + std::to_string(m_dist) + " " + std::to_string(m_enableEnemy);
+    NS_LOG_UNCOND(cmd5 << ": " << system(cmd5.c_str()));
 
     Simulator::Destroy();
 }
