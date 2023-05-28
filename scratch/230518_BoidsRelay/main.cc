@@ -393,6 +393,7 @@ void NetSim::Run(void) {
 
     Simulator::Run();
 
+    double packetLoss;
     std::ostringstream oss;
     oss << ">-----------------------------\n";
     monitor->CheckForLostPackets();
@@ -416,9 +417,13 @@ void NetSim::Run(void) {
             oss << "  Mean Jitter:        " << Time(stat.jitterSum / stat.rxPackets).As(Time::MS) << "\n";
         }
         oss << "  Packet Loss Ration: " << (double)stat.lostPackets / stat.txPackets * 100 << " %\n";
+        packetLoss = (double)stat.lostPackets / stat.txPackets * 100;
     }
     oss << "-----------------------------<";
     NS_LOG_UNCOND(oss.str());
+    AsciiTraceHelper ascii;
+    auto stream = ascii.CreateFileStream(OUTPUT_DIR + m_prefix + ".csv", std::ios_base::app);
+    *stream->GetStream() << m_ws << "," << m_wa << "," << m_wc << "," << m_dist << "," << m_enableEnemy << "," << packetLoss << std::endl;
 
     std::string cmd1 = "python3 scratch/230518_BoidsRelay/plot-distance-nodes.py " + std::to_string(m_ws) + " " + std::to_string(m_wa) + " " + std::to_string(m_wc) + " " + std::to_string(m_dist) + " " + std::to_string(m_enableEnemy);
     NS_LOG_UNCOND(cmd1 << ": " << system(cmd1.c_str()));
