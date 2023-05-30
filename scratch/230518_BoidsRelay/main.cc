@@ -40,6 +40,7 @@ class NetSim {
     ApplicationContainer m_apps;   // m_apps:=(アプリケーションコンテナ).
     double m_simStop;              // m_simStop:=(シミュレーション終了時間).
 
+    bool m_flag;
     std::map<std::string, Ptr<OutputStreamWrapper>> m_streams;  // m_streams[]:=(出力ストリーム).
 
     void TracePosition(Time interval);
@@ -79,6 +80,8 @@ NetSim::NetSim(int argc, char *argv[]) {
     m_enableEnemy = false;
     m_simStop = 100.0;
 
+    m_flag = false;
+
     CommandLine cmd(__FILE__);
     cmd.AddValue("tracing", "Enable tracing, if true", m_tracing);
     cmd.AddValue("logging", "Enable logging, if true", m_logging);
@@ -89,6 +92,7 @@ NetSim::NetSim(int argc, char *argv[]) {
     cmd.AddValue("dist", "", m_dist);
     cmd.AddValue("3d", "Enable 3D, if true", m_enable3D);
     cmd.AddValue("enemy", "Enable enemy, if true", m_enableEnemy);
+    cmd.AddValue("flag", "", m_flag);
     cmd.Parse(argc, argv);
 }
 
@@ -421,9 +425,11 @@ void NetSim::Run(void) {
     }
     oss << "-----------------------------<";
     NS_LOG_UNCOND(oss.str());
-    AsciiTraceHelper ascii;
-    auto stream = ascii.CreateFileStream(OUTPUT_DIR + m_prefix + ".csv", std::ios_base::app);
-    *stream->GetStream() << m_ws << "," << m_wa << "," << m_wc << "," << m_dist << "," << m_enableEnemy << "," << packetLoss << std::endl;
+    if(m_flag) {
+        AsciiTraceHelper ascii;
+        auto stream = ascii.CreateFileStream(OUTPUT_DIR + m_prefix + ".csv", std::ios_base::app);
+        *stream->GetStream() << m_ws << "," << m_wa << "," << m_wc << "," << m_dist << "," << m_enableEnemy << "," << packetLoss << std::endl;
+    }
 
     std::string cmd1 = "python3 scratch/230518_BoidsRelay/plot-distance-nodes.py " + std::to_string(m_ws) + " " + std::to_string(m_wa) + " " + std::to_string(m_wc) + " " + std::to_string(m_dist) + " " + std::to_string(m_enableEnemy);
     NS_LOG_UNCOND(cmd1 << ": " << system(cmd1.c_str()));
@@ -431,8 +437,10 @@ void NetSim::Run(void) {
     NS_LOG_UNCOND(cmd2 << ": " << system(cmd2.c_str()));
     std::string cmd3 = "python3 scratch/230518_BoidsRelay/plot-velocity.py " + std::to_string(m_ws) + " " + std::to_string(m_wa) + " " + std::to_string(m_wc) + " " + std::to_string(m_dist) + " " + std::to_string(m_enableEnemy);
     NS_LOG_UNCOND(cmd3 << ": " << system(cmd3.c_str()));
-    std::string cmd4 = "python3 scratch/230518_BoidsRelay/plot-mobility.py " + std::to_string(m_ws) + " " + std::to_string(m_wa) + " " + std::to_string(m_wc) + " " + std::to_string(m_dist) + " " + std::to_string(m_enableEnemy);
-    NS_LOG_UNCOND(cmd4 << ": " << system(cmd4.c_str()));
+    if(!m_flag) {
+        std::string cmd4 = "python3 scratch/230518_BoidsRelay/plot-mobility.py " + std::to_string(m_ws) + " " + std::to_string(m_wa) + " " + std::to_string(m_wc) + " " + std::to_string(m_dist) + " " + std::to_string(m_enableEnemy);
+        NS_LOG_UNCOND(cmd4 << ": " << system(cmd4.c_str()));
+    }
     std::string cmd5 = "python3 scratch/230518_BoidsRelay/plot-total_rx.py " + std::to_string(m_ws) + " " + std::to_string(m_wa) + " " + std::to_string(m_wc) + " " + std::to_string(m_dist) + " " + std::to_string(m_enableEnemy);
     NS_LOG_UNCOND(cmd5 << ": " << system(cmd5.c_str()));
 
