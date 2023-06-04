@@ -220,9 +220,11 @@ Vector BoidsMobilityModel::Alignment() {
 }
 
 Vector BoidsMobilityModel::Cohesion() {
-    Vector tmp(0.0, 0.0, 0.0);
     auto position = m_helper.GetCurrentPosition();
+    Vector tmp(0.0, 0.0, 0.0);
     int cnt_neighbors = 0;
+    tmp = tmp + position;
+    cnt_neighbors++;
     for(auto itr = NodeList::Begin(); itr != NodeList::End(); ++itr) {
         auto neighbor = *itr;
         if(m_neighbors.find(neighbor->GetId()) == m_neighbors.end()) continue;
