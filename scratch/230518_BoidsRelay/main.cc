@@ -194,13 +194,12 @@ void NetSim::CreateNodes(void) {
     NodeContainer bs(2);
     m_nodes.Add(bs);
 
+    auto posiList = CreateObject<ListPositionAllocator>();
+    posiList->Add(Vector(-80.0, 0.0, 0.0));
+    posiList->Add(Vector(80.0, 0.0, 0.0));
+
     MobilityHelper mobility;
-    mobility.SetPositionAllocator("ns3::GridPositionAllocator",
-                                  "GridWidth", UintegerValue(5),
-                                  "MinX", DoubleValue(-80.0),
-                                  "MinY", DoubleValue(0.0),
-                                  "DeltaX", DoubleValue(160.0),
-                                  "Z", DoubleValue(0.0));
+    mobility.SetPositionAllocator(posiList);
     mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
     mobility.Install(bs);
 
@@ -208,6 +207,14 @@ void NetSim::CreateNodes(void) {
     NodeContainer boids(5);
     m_nodes.Add(boids);
 
+    posiList = CreateObject<ListPositionAllocator>();
+    posiList->Add(Vector(-2 * m_dist, 0.0, height));
+    posiList->Add(Vector(-m_dist, 0.0, height));
+    posiList->Add(Vector(0.0, 0.0, height));
+    posiList->Add(Vector(m_dist, 0.0, height));
+    posiList->Add(Vector(2 * m_dist, 0.0, height));
+
+    mobility.SetPositionAllocator(posiList);
     mobility.SetMobilityModel("ns3::BoidsMobilityModel",
                               "ZoneS", DoubleValue(70.0),
                               "ZoneA", DoubleValue(70.0),
@@ -226,12 +233,6 @@ void NetSim::CreateNodes(void) {
                               "MaxZ", DoubleValue(height + 10.0),
                               "MaxSpeed", DoubleValue(15.0),
                               "Interval", TimeValue(Seconds(0.1)));
-    mobility.SetPositionAllocator("ns3::GridPositionAllocator",
-                                  "GridWidth", UintegerValue(5),
-                                  "MinX", DoubleValue(-2 * m_dist),
-                                  "MinY", DoubleValue(0.0),
-                                  "DeltaX", DoubleValue(m_dist),
-                                  "Z", DoubleValue(height));
     mobility.Install(boids);
 
     for(auto itr = boids.Begin(); itr != boids.End(); ++itr) {
